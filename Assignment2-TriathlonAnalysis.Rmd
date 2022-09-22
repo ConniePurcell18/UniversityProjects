@@ -1,0 +1,153 @@
+---
+title: "Assignment 2 - Triathlon - Student 20200891"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Task 1 - 1 - Importing Dataset
+```{r}
+load("~/University/Autumn Modules/Programming R/Assignment/Assignment 2/triathlon2019.Rdata")
+str(triathlon)
+```
+
+# Task 1 - 2 - Remove athletes that have missing times from failing to start/finish or disqualified
+
+```{r}
+Triathlon_Real <- na.omit(triathlon)
+```
+
+
+# Task 1 - 3 - Append columns with Swim, Bike and Run speeds in km/h
+
+```{r}
+Swim_KmHr <- 3.862/(Triathlon_Real$Swim/60/60)
+Bike_KmHr <-180.246/(Triathlon_Real$Bike/60/60)
+Run_KmHr <- 42.195/(Triathlon_Real$Run/60/60)
+Triathlon_Real <- cbind.data.frame(Triathlon_Real,Swim_KmHr, Bike_KmHr, Run_KmHr)
+```
+
+
+# Task 2 - 1 - Use the pairs() plot to visualise the data
+
+```{r}
+pairs(triathlon[,c("Swim_Speed","Bike_Speed","Run_Speed")],pch=3,col=gray(0.5,0.2))
+```
+
+
+# Task 2 - 2 - Change plot so plot symbol and colour of each datapoint represents gender
+
+```{r}
+colgender <- c("Light Blue", "Pink")
+names(colgender) <- c("Male", "Female")
+pairs(Triathlon_Real[,12:14],col=colgender[Triathlon_Real$Gender])
+```
+
+# Task 2 - 3 - For each athlete; calculate % overall time spent in transitions. Plot histogram of these percentages
+
+```{r}
+Transition_Total <- Triathlon_Real$T1 + Triathlon_Real$T2
+Percent_Transtion <- (Transition_Total*100)/Triathlon_Real$Overall
+hist(Percent_Transtion, breaks = 30, xlab = "Percentage Time in Transition",
+     main = "Histogram of Percentage Time in Transition", col = "Brown")
+
+```
+
+# Task 2 - 4 - Produce a 3 panel plot with the histograms of the speed for each sport
+
+```{r}
+par(mfrow = c(2,2))
+hist(Triathlon_Real$Swim_KmHr, xlab = "Swim Speed Km/h", main = "Histogram of Swimming Speed", 
+     col = "Light Blue")
+hist(Triathlon_Real$Bike_KmHr, xlab = "Bike Speed Km/h", main = "Histogram of Biking Speed", 
+     col = "Purple")
+hist(Triathlon_Real$Run_KmHr, xlab = "Run Speed Km/h", main = "Histogram of Running Speed", 
+     col = "Orange")
+
+```
+
+# Task 2 - 5 - Construct a table of the number of athletes from each country. Represent in a bar plot
+
+```{r}
+Athletes <- table(Triathlon_Real$Country)
+barplot(Athletes,las=2,cex.names=0.7)
+```
+
+# Task 2 - 6 - Construct a box plot of the finishing times for each division
+
+```{r}
+
+boxplot(Triathlon_Real$Overall ~ Triathlon_Real$Division, ylab = "Finishing Time (Seconds)",
+        xlab = "Division", main = "Finishing Times per Division")
+```
+
+# Task 2 - 7 - Customise box plot so that the boxes are ordered by median overall time for each division.
+
+```{r}
+
+Median_Time <- with(Triathlon_Real, reorder(Triathlon_Real$Division, Triathlon_Real$Overall, median))
+boxplot(Triathlon_Real$Overall ~ Median_Time, data = Triathlon_Real, xlab = "Division",
+        ylab = "Finishing Time (Seconds)", main = "Finishing Times per Division (Median)")
+```
+
+# Task 2 - 8 - Customise the box plot so that the y-axis ticks are whole number hours
+
+```{r}
+
+Median_Time <- with(Triathlon_Real, reorder(Triathlon_Real$Division, Triathlon_Real$Overall, median))
+boxplot((Triathlon_Real$Overall/60/60) ~ Median_Time, data = Triathlon_Real, xlab = "Division",
+        ylab = "Finishing Time (Hours)", main = "Finishing Times in Hours per Division (Median)")
+```
+
+# Task 3 - Creativity
+
+```{r}
+Overall_Time_Hour <- Triathlon_Real$Overall/60/60
+
+plot(density(Overall_Time_Hour), xlab = "Overall Time Hour", main = "Overall Time Hour", col = "Blue" )
+
+max(Overall_Time_Hour)
+min(Overall_Time_Hour)
+```
+#We can see here that the curve shows that the average amount of time it took the athletes to complete the triathlon was around the 10 hour mark. The max time that was taken to complete the triathlon was almost 17 hours and the quickest time was just under the 8 hour mark.
+
+```{r}
+tapply(Overall_Time_Hour, Triathlon_Real$Country, min, na.rm = TRUE)
+```
+
+#We can see the quickest time divided by country. The countrY with the fastest time was Germany followed by the United States.
+```{r}
+tapply(Overall_Time_Hour, Triathlon_Real$Gender, min, na.rm = TRUE)
+```
+
+#We can see the quickest time for males was just under 8 hours and the fastest time for women was just over 8 and a half hours.
+
+```{r}
+regress <- lm(Transition_Total ~ Triathlon_Real$Overall, data = Triathlon_Real)
+plot(Triathlon_Real$Overall, Transition_Total, xlab = "Triathlon Overall Time",
+     ylab = "Transition Times Overall") 
+abline(regress, col = "red")
+```
+
+#This plot and regression line shows that there is a strong correlation between athletes that had fast transitions also tended to have faster finishing times.If I had to make recommendations to athletes about an area they could add to their training to aid their performance I would recommend athletes work on their transitions between the three events.
+
+```{r}
+Division <- table(Triathlon_Real$Division)
+View(Division)
+barplot(height = Division, main = "Number per Division", xlab = "Divisions", col = 1:8, horiz = TRUE,
+        las = 2, cex.names = 0.55)
+```
+
+#The barplot shows that the largest division in the triathlon was the Males age 45-49 and the division with the lowest numbers is Males 80-84.
+
+
+```
+
+  
+
+
+
+```
+

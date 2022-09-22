@@ -1,0 +1,182 @@
+---
+title: "Assignment 4 - 20200891"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+# Task 1 - 1 - Read the data into R
+
+```{r}
+
+library(openxlsx)
+GoalsData <- read.xlsx("CLGoals.xlsx")
+
+```
+
+# Task 1 - 2 - Produce a table that tabulates frequency of each no. of goals
+
+```{r}
+FreqGoals <- table(GoalsData$Goals)
+```
+
+# Task 1 - 3 - Produce a plot of the frequency of each no. of goals
+
+```{r}
+
+plot(FreqGoals, xlab = "Number Goals", ylab = "Frequency of Goals", main = "Plot Frequency Number of Goals UEFA Champions League", pch = 1, col = "light blue", type = "l")
+
+```
+
+# Task 1 - 4 - Calculate the mean and SD of the number of goals
+
+```{r}
+
+Mean_Goals <- mean(GoalsData$Goals)
+SD_Goals <- sd(GoalsData$Goals)
+
+```
+
+# Task 2a - 1 - Write a function that calculates the log-likelihood function (for a specified value of λ) for
+# the Poisson model for the UEFA Champions League data.
+
+```{r}
+#Probability x=1-8 goals(48 values) with lambda(mean) 3.25
+
+loglik_Poisson <- function(lambda,x)
+{
+sum(dpois(x,lambda,log=TRUE))
+}
+
+```
+
+# Task 2a - 2 - Plot the log-likelihood function for a range of values of λ. Hint: Make sure that λ = mean x is in the range.
+
+```{r}
+
+#Probability x=1-8 goals(48 values) with lambda being valued 0=4 in steps 0.25.
+
+lambda <- seq(2,5,length=101)
+p <- rep(NA,101)
+for (i in 1:101)
+{
+p[i] <- loglik_Poisson(lambda[i],GoalsData$Goals)
+2
+}
+plot(lambda,p,type="l")
+
+```
+
+# Task 2a - 3 - Add a vertical line to the plot at the mean value x and visually verify that this maximizes the log-likelihood function.
+
+```{r}
+
+xbar <- mean(GoalsData$Goals)
+plot(lambda,p,type="l")
+abline(v=xbar)
+
+
+#Added a vertical line for our previous mean value 3.25 which did not seem to reflect the maximum value of log likelihood.
+
+```
+
+# Task 2a - 4 - Simulate 48 values from a Poisson model with λ = mean x and summarize the resulting values
+
+```{r}
+
+set.seed(123)
+
+#Used rpois to create random simulation 48 values with a mean of 3.25 from goals data.
+
+randgoals <- rpois(48,mean(GoalsData$Goals))
+table(randgoals)
+
+mean(randgoals)
+sd(randgoals)
+
+# Mean  from our simulated values is 3.44 which is not far from original mean of 3.45 from goals data. Similarly sd is 1.9 which is not too dissimilar to standard deviation 1.591 from goals data.
+
+```
+
+# Task 2a - 5 - Simulate 48 values from a Poisson model for other values of λ and summarize the resulting values
+
+```{r}
+
+#Lambda greater than mean, zero goals becomes less likely. The mean and SD grow
+
+randgoals <- rpois(48,mean(GoalsData$Goals)+2)
+table(randgoals)
+
+mean(randgoals)
+sd(randgoals)
+
+#Lambda less than mean, zero goals becomes more likely. The mean and SD shrink
+
+randgoals <- rpois(48,mean(GoalsData$Goals)-2)
+table(randgoals)
+
+mean(randgoals)
+sd(randgoals)
+
+```
+
+# Task 2b - 1 - Create a dHurdle() function that has arguments x, param that computes P{X = x} for the Hurdle model, where the first element of the vector param is θ and the second element of the vector param is λ. Ensure that the function can handle x being a vector of values.
+
+```{r}
+
+#This function computes the hurdle probability (many other ways are possible). I used the fact that logical terms are treated as: TRUE=1, FALSE=0.
+
+dHurdle <- function(x,param)
+{
+theta <- param[1]
+lambda <- param[2]
+(x==0)*theta + (x>0)*(1-theta)*dpois(x,lambda)/(1-dpois(0,lambda))
+}
+
+```
+
+# Task 2b - 2 - Write a function that calculates the log-likelihood function (for a specified value of param) for the Hurdle model for the UEFA Champions League goal data.
+
+```{r}
+#This function takes the sum logarithim of the previous Hurdle function for certain input parameters and provides the logarithim.
+
+
+loglik <- function(param,x)
+{
+theta <- param[1]
+lambda <- param[2]
+sum(log(dHurdle(x,c(theta,lambda))))
+}
+
+```
+
+# Task 2b - 3 - Use the optim function to find the value of θ and λ that maximizes the log-likelihood.
+#Hint: optim minimizes functions, by default, so you may want to write a function that computes minus the log-likelihood and minimize that.
+
+```{r warning=FALSE}
+
+lambda <- mean(GoalsData$Goals)
+param0 <- c(exp(-lambda),lambda)
+param0
+
+fit <- optim(param0,loglik,x=GoalsData$Goals,control=list(fnscale=-1))
+
+fit
+
+```
+
+# Task 2b - 4 - Comment on the value of θ found and compare the log-likelihood values found for the Poisson and Hurdle models
+
+```{r}
+
+#We notice that the estimated value of theta which is P{X = 0} is very similar to that for the Poisson. 
+#The estimated value is slightly higher than that given by the Poisson model, but not very much higher.
+
+
+```
+

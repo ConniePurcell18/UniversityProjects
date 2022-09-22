@@ -1,0 +1,271 @@
+---
+title: "Student_20200891_Project_Task1"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R TASK 1 - Analysis
+
+This analysis is going to look at the census 2016 data for Ireland on marital status and also dwellings. This dataset was obtained from the following link and tidied before using in this assignment https://census2016.geohive.ie/datasets/population-by-sex-and-marital-status-local-electoral-areas-census-2016-theme-1-2-ireland-2016-cso-osi 
+
+My analysis looks at 3 factors; population density/spread, dwellings and marital status. From there I look at my results through the lens of the Irish housing crisis to make recommendations.
+
+```{r}
+
+library("ggplot2")
+library("dplyr")
+library("knitr")
+
+censusdata <- read.csv("Population_Census_2016.csv")
+View(censusdata)
+
+```
+
+My first analysis is of the demographics of each county, I wanted to provide a quick visualisation of the male and female populace per county. You can see in the below bar charts that by far Dublin has the largest total population. The spread of gender across counties is rather even. 
+
+```{r}
+#Plot of Female Pop per County
+ggplot(censusdata) +
+ aes(x = COUNTY, weight = Total.Population...Female) +
+ geom_bar(fill = "#9c179e") +
+ labs(x = "County", y = "Female Population", title = "Female Population per County") +
+   coord_flip() +
+ theme_minimal()
+```
+
+
+```{r}
+#Plot of Male Pop per County
+ggplot(censusdata) +
+ aes(x = COUNTY, weight = Total.Population...Male) +
+ geom_bar(fill = "#4292c6") +
+ labs(x = "County", y = "Male Population", title = "Male Population per County") +
+ coord_flip() +
+ theme_minimal()
+```
+This plot is to further illustrate the total population spread per county. Dublin has by far the largest population density. This is followed by Cork, Kildare and Donegal. The spread of the min and max population for Dublin and Cork is very large as is the interquartile range.
+
+```{r}
+
+ggplot(censusdata) +
+ aes(x = COUNTY, y = Total.Population) +
+ geom_boxplot(fill = "#bdbdbd") +
+ labs(x = "Counties", y = "Population", title = "Boxplot Population Spread by County") +
+   coord_flip() +
+ theme_minimal()
+
+```
+
+This is further reflected by the provincial population chart. The population of Leinster is high due to the high population of Dublin and Kildare. So while the demographics of male/female populations are spread evenly across counties, the actual population spread is less so with a high density in Leinster/Dublin.
+
+```{r}
+ggplot(censusdata) +
+ aes(x = PROVINCE, weight = Total.Population) +
+ geom_bar(fill = "#a50f15") +
+ labs(x = "Province", y = "Population Density", title = "Population by Province") +
+ theme_minimal()
+
+```
+
+I filtered the population so I could see the regions with higher male than female populations.
+
+```{r}
+#Display regions that have a higher male than female population
+Male_Counties <- filter(censusdata, censusdata$Total.Population...Male>censusdata$Total.Population...Female)
+
+
+```
+
+I mutated the census dataset and saved it as a new dataframe. I amended the dataset to include population percentages. I then found that the regions with the lowest population percentages are in the midlands, Leitrim and Longford. Longford despite being in Leinster has very low population percentage.
+
+```{r}
+#Added a column with the % Population of each region
+Total_Population_Sum = sum(censusdata$Total.Population)
+Censusdata_2016 <- mutate(censusdata, Percent_Population = censusdata$Total.Population/Total_Population_Sum * 100)
+
+#Ordered data to find the 5 regions with lowest population percentage
+Censusdata_2016[order(Censusdata_2016$Percent_Population), ][1:5,1:5]
+```
+
+I created a table "Pop_Stats" to illustrate the mean, median and standard deviations of the population of Ireland 2016.
+
+```{r}
+
+#Created a table of the mean and median of the population and the standard deviation male and female populations
+Pop_Stats <- summarise(Censusdata_2016,
+                       `Mean Population` = mean(Censusdata_2016$Total.Population),
+                       `Median Population` = median(Censusdata_2016$Total.Population),
+                       `SD Male` = sd(Censusdata_2016$Total.Population...Male),
+                       `SD Female` = sd(Censusdata_2016$Total.Population...Female))
+
+knitr:::kable(Pop_Stats, align = "ccc")
+```
+
+
+I plotted the total occupied permenant dwellings to total permenat dwellings. You can see there is a clear upward regression.
+
+```{r}
+ggplot(censusdata) +
+(aes(x = Occupied.Permenant.Dwellings, y = Total.Permenant.Dwellings)) +
+geom_line() +
+geom_point() +
+labs(x = "Occupied Permenant Dwellings", y = "Total Dwellings", title = "Occupied Dwellings vs Total")
+```
+For vacant dwellings plot there is less of a clear trend. These are Vacant Dwellings that dont include holiday homes or dwellings registered as temporarily absent. While its less of a clear trent than the above graph the numbers are still rather high for vacant dwellings.
+
+```{r}
+ggplot(censusdata) +
+(aes(x= Other.Vacant.Dwellings, y = Total.Permenant.Dwellings)) +
+geom_line() +
+geom_point() +
+labs(x = "Vacant Dwellings", y = "Total Dwellings", title = "Vacant Dwellings vs Total", subtitle = "Not including Holiday Homes or Temporary Vacancies")
+```
+Here I created a bar chart to see the areas with the highest volume of holiday homes. This bar chart is useful for recommendations of what counties to invest tourism marketing etc into.
+
+```{r}
+ggplot(censusdata) +
+ aes(x = COUNTY, weight = Holiday.Homes) +
+ geom_bar(fill = "#ed7953") +
+ labs(x = "County", y = "Holiday Homes", title = "Holiday Homes per County") +
+  coord_flip() +
+ theme_minimal()
+```
+This is a boxplot of vacant dwellings. A lot of the vacancies appear to be in the West of Ireland, where there are less jobs.
+
+```{r}
+ggplot(censusdata) +
+ aes(x = COUNTY, y = Other.Vacant.Dwellings) +
+ geom_boxplot(fill = "#41ab5d") +
+ labs(x = "County", y = "Vacant Dwelling", title = "Boxplot Vacant Dwellings per County", subtitle = "Not including Holiday Homes or Temporary Vacancies") +
+   coord_flip() +
+ theme_minimal()
+
+```
+
+However saying that when we actually calaculate the vacant dwelling percentages, we can see the highest percentage of vacant dwellings are actually in Dublin and Kildare. I would love more data to investigate this further. There is currently housing shortages in these regions so it'd be interesting to see if we could take some of these vacant dwellings and repurpose them to assist with this shortage.
+
+```{r}
+
+Censusdata_2016 <- mutate(Censusdata_2016, Percent_Vacancy= Censusdata_2016$Other.Vacant.Dwellings/Censusdata_2016$Total.Permenant.Dwellings * 100)
+
+Censusdata_2016[order(Censusdata_2016$Percent_Vacancy), ][1:5,1:5]
+```
+
+Here we can also see the highest percentage of permenant dwellings that are currently occupuied are spread between Munster and Ulster.
+
+```{r}
+
+Censusdata_2016 <- mutate(Censusdata_2016, Percent_Dwelling_Perm= Censusdata_2016$Occupied.Permenant.Dwellings/Censusdata_2016$Total.Permenant.Dwellings * 100)
+
+Censusdata_2016[order(Censusdata_2016$Percent_Dwelling_Perm), ][1:5,1:5]
+
+```
+
+Here is a scatterplot of the single population of Ireland vs the total population. There is a perfect positive correlation between the two indicating a high number of singles in the population. 
+
+
+```{r}
+ggplot(censusdata) +
+ aes(x = Total.Population, y = Single...Total, colour = COUNTY) +
+ geom_point(size = 1L) +
+ scale_color_hue() +
+ labs(x = "Total Population", y = "Total Single Population", title = "Single Population vs Total Population", color = "Counties") +
+ theme_minimal()
+
+ggplot(censusdata) +
+ aes(x = Total.Population, y = Single...Total, colour = COUNTY) +
+ geom_point(size = 1L) +
+ scale_color_hue() +
+ labs(x = "Total Population", y = "Total Single Population", title = "Single Population vs Total Population", color = "Counties") +
+ theme_minimal() +
+geom_smooth(method='lm')
+```
+
+This scatter plot of the married population shows a positive correlation but not as strong as the single plot above.
+
+```{r}
+ggplot(censusdata) +
+ aes(x = Total.Population, y = Married...Total, colour = COUNTY) +
+ geom_point(size = 1L) +
+ scale_color_hue() +
+ labs(x = "Total Population", y = "Total Married Population", title = "Married Population vs Total Population", subtitle = "Including Civil Partnerships", color = "Counties") +
+ theme_minimal()
+```
+This plot of Widowed population shows a low positive correlation. There are quite a large amount of outliers in the graph particularly seeming to be from the Dublin region.
+
+```{r}
+ggplot(censusdata) +
+ aes(x = Total.Population, y = Widowed...Total, colour = COUNTY) +
+ geom_point(size = 1L) +
+ scale_color_hue() +
+ labs(x = "Total Population", y = "Widowed Population", title = "Total Population vs Widowed Population", color = "Counties") +
+ theme_minimal()
+```
+This plot of divorced/seperated population shows a low positive correlation.
+
+```{r}
+
+Censusdata_2016 <- mutate(Censusdata_2016, Total_Seperated_Divorce = Censusdata_2016$Divorced...Total + Censusdata_2016$Seperated...Totals)
+
+
+ggplot(Censusdata_2016) +
+ aes(x = Total.Population, y = Total_Seperated_Divorce, colour = COUNTY) +
+ geom_point(size = 1L) +
+ scale_color_hue() +
+ labs(x = "Total Population", y = "Divorce/Seperated Population", title = "Divorced and Seperated Population vs Total Population", color = "Counties") +
+ theme_minimal()
+
+```
+This shows us the percentage of singles in the population. We can see the highest single percentages are in Roscommon and Dublin.
+
+```{r}
+
+Censusdata_2016 <- mutate(Censusdata_2016, Percent_Single= Censusdata_2016$Single...Total/Censusdata_2016$Total.Population * 100)
+
+Censusdata_2016[order(Censusdata_2016$Percent_Single), ][1:5,1:5]
+
+
+```
+
+This shows us the percentage rate of those seperated and divorced in the population. The highest divorce/seperation percentage is in Athlone in Roscommon.
+
+```{r}
+Censusdata_2016 <- mutate(Censusdata_2016, Percent_Divorce_Sep= Censusdata_2016$Total_Seperated_Divorce/Censusdata_2016$Total.Population * 100)
+
+Censusdata_2016[order(Censusdata_2016$Percent_Divorce_Sep), ][1:5,1:5]
+
+
+```
+
+The means show there are slighlty higher means of married and single males than females in Ireland. The differences are minor however. The main difference is between the widower means. There is a far larger widowed female population in Ireland than male.
+
+```{r}
+
+Mean_Single_Male <- mean(Censusdata_2016$Single...Males)
+Mean_Single_Female <- mean(Censusdata_2016$Single...Females)
+
+Mean_Marry_Male <- mean(Censusdata_2016$Married...Males)
+Mean_Marry_Female <- mean(Censusdata_2016$Married...Females)
+
+Mean_Widow_Male  <- mean(Censusdata_2016$Widowed...Males)
+Mean_Widow_Female <- mean(Censusdata_2016$Widowed...Females)
+
+
+```
+
+
+## Conclusions
+
+My conclusions are that the population spread between males and female demographics in Ireland is even. However the general population is not very spread, with a high majority of individuals registered as living in Dublin. This makes sense as Dublin is the capital, and thus has the largest population. In the provincial analysis you can see this reflected also as Leinster has the highest population density.
+
+Interestingly while Dublin has the highest population living here, in my analysis four out of five ares with highest vacancy of dwellings was in Dublin: In Lucan, Templeogue, Killiney and Clondalkin. Currently there is a housing crisis in Dublin so I'd recommend we examine this trend and see if there is potentially abandoned housing occuring in the city. If this is the case we could try and encourage more individuals, particularly if its the retired populace, to move to more rural areas. Areas where holiday homes are popular is graphed. These areas have nice locales, and could encourage older retired populace to move to these locales to free up housing shortages in other regions.
+
+My final analysis was of the marital status demogrraphics of each county. Unsuprisingly, in the scatterplots we can see Dublin has the highest levels of each marital status demographic. There is a central tendency in the single and married demographics scatter plots, with a clear regression line added to the singles plot, and more spread when it comes to divorce, seperation and widowers. There is a rather clearly high single population in Ireland.
+
+The marital status shows a clear trend that there are higher levels of singles in Ireland than in the past. This combined with the population density analysis, and analysis on dwellings vacancy and spread I hope can be used for future housing planning. Clearly there needs to be more housing developed in Ireland geared towards our growing singles population (however data is lacking how many of these are single households or single parents with children). There are regions in Leinster that could be developed more i.e. Longford for commuting workers and there are areas in Dublin with vacant dwellings that need to be addressed. These issues can be looked at further potentially to assist with creating further supply for currently very high demand.
+
+Similarly if we could encourage a population shift towards our tourist/holiday home locations in the West, particularly with aging retired population, this would really assist the housing crisis. The current large population density in Dublin/Leinster is causing housing issues.
+

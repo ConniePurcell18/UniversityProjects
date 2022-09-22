@@ -1,0 +1,129 @@
+---
+title: "Assignment 1 Outline Solutions"
+author: "STAT40620/40730"
+date: "10/16/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Task 1: Manipulation
+
+1. The data can be loaded using the following command.
+```{r}
+Census <- read.csv("Census2016.csv")
+```
+
+2. The data dimensions can be found using the following commands.
+```{r}
+nrow(Census)
+ncol(Census)
+dim(Census)
+```
+Note that, if you used row.names=1 when loading the data, then it will have one less column.
+
+3. I renamed the columns of the data as follows:
+```{r}
+colnames(Census) <- c("County","Longitude","Latitude","Area","Male","Female","Households"
+                      ,"Dwellings","Houses","Agriculture","Construction","Manufacturing"
+                      ,"Commerce","Transport","Public","Services","Other","Male (>21)"
+                      ,"Male (NS)","Female (>21)","Female (NS)")
+```
+
+4. (a) The following commands calculate the percentage female and appends this to the dataset
+```{r}
+female_percentage <- 100*Census$Female/(Census$Female+Census$Male)
+Census <- cbind(Census,"Female (%)" = female_percentage)
+```
+
+4. (b) The following commands calculate the average number of people per household and appends this to the dataset
+```{r}
+average_household <- (Census$Female+Census$Male)/Census$Households
+Census <- cbind(Census,"Average Household"=average_household)
+```
+
+4. (c) The following commands calculate the total number of people in employment in each county
+```{r}
+employment <- apply(Census[,9:16],1,sum)
+Census <- cbind(Census, Employment=employment)
+```
+Alternatively, this could be done by selecting columns by name.
+
+4. (d) The column was removed using this command.
+```{r}
+Census <- Census[,colnames(Census)!="Area"]
+```
+Alternatively, this could be done by column number. 
+
+# Task 2: Exploring
+
+1. We can find the counties with the smallest average household size using these commands.
+```{r}
+average_household <- Census$`Average Household`
+names(average_household) <- Census$County
+sort(average_household)
+sort(average_household, decreasing=TRUE)
+```
+Alternatively, we could rank the counties and see the top three easily
+```{r}
+rank(average_household)
+```
+
+2. We can compute the mean size of the counties as follows:
+```{r}
+mean(Census$Male+Census$Female)
+```
+
+3. We can find the counties with more males than females using the following command:
+```{r}
+Census$County[Census$`Female (%)`<50]
+```
+
+# Task 3
+
+1. We can compute the percentage of people who work nationally in each sector, by first calculating how many work in each sector and then dividing by the population (and multipling by 100).
+```{r}
+sector_total <- apply(Census[,9:16],2,sum)
+pop_total <- sum(Census$Male+Census$Female)
+100*sector_total/pop_total
+```
+It is worth noting that the percentages don't add to 100% because many people are not in employment.
+
+If we were to compute the percentages, amongst those in employment, we get:
+```{r}
+100*sector_total/sum(sector_total)
+```
+
+2. We can plot the relationship between the two variables using the following command:
+```{r}
+percentage_agriculture <- 100*Census$Agriculture/(Census$Male+Census$Female)
+plot(Census$`Average Household`,percentage_agriculture,xlab="Average Household Size"
+     ,ylab="Agriculture, Forestry and Fishing (%)")
+```
+
+There appears to be a weak negative relationship between the variables. 
+
+# Task 4: Creativity
+
+
+I computed the percentage of dwellings that are houses
+```{r}
+percentage_houses <- Census$Houses/Census$Dwellings*100
+names(percentage_houses) <- Census$County
+Census <- cbind(Census,"Houses (%)"=percentage_houses)
+```
+
+The counties in increasing order are:
+```{r}
+sort(percentage_houses)
+```
+
+We can plot the relationship between average household size and the percentage of houses. 
+```{r}
+plot(Census$`Houses (%)`,Census$`Average Household`,xlab="Percentage Houses",ylab="Average Household Size",pch=3,col="green",cex=0.5)
+text(Census$`Houses (%)`,Census$`Average Household`,Census$County,cex=0.5)
+```
+
+There is an increasing relationship, but not as strong as I expected. We can see that rural areas tend to have a higher percentage of houses and Dublin City has the lowest percentage. In terms of household size, many of the counties with the largest values are in the outskirts of Dublin. 
